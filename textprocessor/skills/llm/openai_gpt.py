@@ -3,9 +3,9 @@ from openai import AzureOpenAI
 
 # Set up the OpenAI client
 openai_client = AzureOpenAI(
-    azure_endpoint=os.environ.get("AZURE_API_ENDPOINT"),
-    api_key=os.environ.get("AZURE_API_KEY"),
-    api_version="2024-02-15-preview"
+    azure_endpoint=os.environ.get("AZURE_OPENAI_API_ENDPOINT"),
+    api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
+    api_version=os.environ.get("AZURE_OPENAI_API_VERSION")
 )
 
 # Function to generate a response using the prompt configuration
