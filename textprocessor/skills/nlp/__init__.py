@@ -24,15 +24,23 @@ def keep_lowest_comp_index(output):
 
     return non_overlapping_components
 
-def get_nlp(component_names):
-    # Register custom attributes
-    Doc.set_extension("result", default=[])
-    
+def get_nlp(component_names=[]):
     # Load spaCy model
     nlp = spacy.load("en_core_web_sm")
 
-    # Add all components to the pipeline for detection only
-    for component_name in component_names:
-        nlp.add_pipe(component_name, last=True)
+    # Register custom attributes
+    if not Doc.has_extension("result"):
+        Doc.set_extension("results", default=[])
+
+    if component_names:
+        # Add all components to the pipeline for detection only
+        for component_name in component_names:
+            nlp.add_pipe(component_name, last=True)
     
     return nlp
+
+def get_results(doc):
+    return doc._.results
+
+def set_results(doc, value):
+    doc._.results = value

@@ -48,9 +48,10 @@ def annotate(req: func.HttpRequest) -> func.HttpResponse:
         cursor = conn.cursor(dictionary=True)
         
         # Get the list of all text components for the skill from the database
-        query = "SELECT text_component_id, name, markup_id FROM text_component WHERE skill_id = %s"
+        query = "SELECT text_component_id, skill_id, name, example, markup_id FROM text_component WHERE skill_id = %s"
         cursor.execute(query, (skill_id,))
         all_components = cursor.fetchall()
+
 
         # Dictionary of text component id and name
         components = {component['text_component_id']: ComponentData(component['name'], component['markup_id']) for component in all_components}
@@ -151,11 +152,11 @@ def annotate(req: func.HttpRequest) -> func.HttpResponse:
         if 'highlighted_text' in annotations:
             present_component_names = set(re.findall(r'data-component-name="([^"]+)"', annotations['highlighted_text']))
 
-            components_list = update_dictionary(components_list, 'present', [component.name for component in components.values() if component.name in present_component_names and component.markup_id == 1])
-            components_list = update_dictionary(components_list, 'missing', [component.name for component in components.values() if component.name not in present_component_names and component.markup_id == 1])
+            components_list = update_dictionary(components_list, 'present', [component for component in all_components if component['name'] in present_component_names and component['markup_id'] == 1])
+            components_list = update_dictionary(components_list, 'missing', [component for component in all_components if component['name'] not in present_component_names and component['markup_id'] == 1])
         
         if 'notes' in annotations:
-            components_list = update_dictionary(components_list, 'notes', [component.name for component in components.values() if component.markup_id == 2])
+            components_list = update_dictionary(components_list, 'notes', [component for component in all_components if component['name'] if component['markup_id'] == 2])
 
     except mysql.connector.Error as err:
         logging.error(f"MySQL error: {err}")
