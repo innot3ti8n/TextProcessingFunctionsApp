@@ -1,8 +1,8 @@
 # import required
-from textprocessor.skills.nlp import get_results
+from textprocessor.utils import get_results
 
 # import functions / module contains functions to test
-from textprocessor.skills.nlp import punctuation as punct
+from textprocessor.handlers.nlp import punctuation as punct
 
 # Test cases
 def test_detect_markup_proper_nouns(test, mark, detect_markup_nlp_comp):

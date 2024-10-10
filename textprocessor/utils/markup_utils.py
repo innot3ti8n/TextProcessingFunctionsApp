@@ -86,3 +86,4 @@ def merge_markups(text, markups):
         
     
     return merged_markup
+

@@ -12,7 +12,7 @@ openai_client = AzureOpenAI(
 import json
 import logging
 
-def process_text(text, prompt_config, retries=3, delay=2):
+def process_text(text, prompt_config, previous_result=None, retries=3, delay=2):
     print(f"Sending prompts... Max tokens allowed: {prompt_config['chatParameters']['maxResponseLength']}")
 
     # Clear messages to avoid residuals from previous calls
@@ -27,6 +27,11 @@ def process_text(text, prompt_config, retries=3, delay=2):
             messages.append({"role": "user", "content": example["userInput"]})
             messages.append({"role": "assistant", "content": example["chatbotResponse"]})
     
+    # Add the previous result if available, clearly indicating its purpose
+    if previous_result:
+        messages.append({"role": "assistant", "content": f"Use this result when labelling using <mark>: {previous_result}"})
+
+    # Add the user's current input text
     messages.append({"role": "user", "content": text})
 
     for attempt in range(retries):

@@ -8,7 +8,7 @@
 from .conftest import Result
 
 # import module that contains function to be tested
-import textprocessor.skills.nlp.punctuation as punct
+import textprocessor.handlers.nlp.punctuation as punct
 
 # Test cases
 def test_detect_proper_nouns(test, detect_with_nlp):
@@ -156,7 +156,7 @@ def test_detect_simple_punctuation(test, detect_with_nlp):
     ).given(
         { 'text': "This is a test" }
     ).expects(
-        None  # Missing simple punctuation
+        Result(13, 13, 14, 11)  # Missing simple punctuation
     ).using(
         detect_with_nlp
     )

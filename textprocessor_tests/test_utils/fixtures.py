@@ -8,7 +8,7 @@ import logging
 import dotenv
 import pprint
 
-from textprocessor import ComponentData, PromptData, Flag
+from textprocessor.data_models import ComponentData, PromptData, Flag
 
 class TestCase:
     def __init__(self, func):

@@ -5,11 +5,14 @@ import os
 import re
 import json
 
-from textprocessor import Flag, Process, ComponentData, ProcessManager, PromptData, process_with_llm, process_with_nlp
-from textprocessor.skills.llm import openai_gpt
-from textprocessor.skills.nlp import punctuation
-from textprocessor.postprocessing import merge_markups
-from textprocessor.utils import ConcurrentTaskRunner, update_dictionary
+from textprocessor.process_manager import ProcessManager, Process
+from textprocessor.data_models import Flag, ComponentData, PromptData
+
+from textprocessor.processing_pipeline import ProcessingPipeline
+from textprocessor.task_runners import ConcurrentTaskRunner
+from textprocessor.handlers.llm import openai_gpt
+from textprocessor.handlers.nlp import punctuation
+from textprocessor.utils import merge_markups, update_dictionary
 
 dbConfig = {
     'host': os.getenv('AZURE_DB_HOST'),
@@ -26,6 +29,16 @@ app = func.FunctionApp()
 def connect_to_db():
     return mysql.connector.connect(**dbConfig)
 
+# Generate error response
+def error_response(error, user_message=None, status_code=400):
+    logging.error(f"{type(error).__name__}: {str(error)}")
+
+    return func.HttpResponse(json.dumps({
+        'error': "Request Error" if status_code == 400 else "Internal Server Error",
+        'message': user_message
+    }), mimetype="application/json", status_code=status_code)
+
+
 @app.function_name(name="AnnotateText")
 @app.route("annotate", methods=["POST"], auth_level=func.AuthLevel.FUNCTION)
 def annotate(req: func.HttpRequest) -> func.HttpResponse:
@@ -33,8 +46,16 @@ def annotate(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         req_body = req.get_json()
-    except ValueError:
-        return func.HttpResponse("Invalid JSON received.", status_code=400)
+    except ValueError as err:
+        return error_response(err, "Invalid JSON received.")
+
+# Check for required keys
+    required_keys = ['skill_id', 'text']
+    missing_keys = [key for key in required_keys if key not in req_body]
+    
+    if missing_keys:
+        error_message = f"Missing required information: {', '.join(missing_keys)}"
+        return error_response(ValueError(error_message), error_message)
 
     # Get selected skill and text from frontend
     skill_id = req_body.get('skill_id')
@@ -78,6 +99,7 @@ def annotate(req: func.HttpRequest) -> func.HttpResponse:
         r_markups = []
         r_notes = []
 
+        pp = ProcessingPipeline(pm)
 
         for processor in pm.processors:
 
@@ -113,13 +135,13 @@ def annotate(req: func.HttpRequest) -> func.HttpResponse:
                 ]
                 
                 metadata['prompts_data'] = prompts_data
-                runner.add_task(process_with_llm, pm, processor, prompts_data, metadata)
+                runner.add_task(pp.process_with_llm, processor, prompts_data, metadata)
 
             # If processing with nlp
             if pm.processor_type(processor) == 'nlp':
                 processed_with_nlp = True
 
-                runner.add_task(process_with_nlp, pm, processor, metadata)
+                runner.add_task(pp.process_with_nlp, processor, metadata)
             
             nlp_annotated = llm_annotated = llm_notes = ""
 
@@ -155,12 +177,11 @@ def annotate(req: func.HttpRequest) -> func.HttpResponse:
             components_list = update_dictionary(components_list, 'present', [component for component in all_components if component['name'] in present_component_names and component['markup_id'] == 1])
             components_list = update_dictionary(components_list, 'missing', [component for component in all_components if component['name'] not in present_component_names and component['markup_id'] == 1])
         
-        if 'notes' in annotations:
-            components_list = update_dictionary(components_list, 'notes', [component for component in all_components if component['name'] if component['markup_id'] == 2])
-
     except mysql.connector.Error as err:
-        logging.error(f"MySQL error: {err}")
-        return func.HttpResponse("Error connecting to the database.", status_code=500)
+        return error_response(err, "There was an issue connecting to the database", status_code=500)
+
+    except Exception as err:
+        return error_response(err, "An unexpected issue occurred. Please try again later.", status_code=500)
 
     finally:
         if conn:

@@ -1,7 +1,7 @@
 # import required modules
 import pytest
-from textprocessor.skills.nlp import get_results
-from textprocessor.postprocessing import markup_text
+from textprocessor.utils import get_results
+from textprocessor.postprocessing.text_transform import markup_text
 
 # import fixtures
 from textprocessor_tests.test_utils.fixtures import conn, get_skill_data, verify_result, test

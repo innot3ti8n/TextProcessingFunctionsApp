@@ -1,6 +1,6 @@
 from spacy.language import Language
 
-from . import keep_lowest_comp_index, get_nlp, get_results
+from textprocessor.utils import keep_lowest_comp_index, get_nlp, get_results
 
 # Custom component for detecting proper nouns and ensuring they are capitalized
 @Language.component("detect_proper_nouns")

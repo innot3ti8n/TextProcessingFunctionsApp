@@ -1,8 +1,8 @@
 # import required
-from textprocessor.skills.nlp import get_results
+from textprocessor.utils import get_results
 
 # import functions / module contains functions to test
-from textprocessor.skills.llm import openai_gpt
+from textprocessor.handlers.llm import openai_gpt
 
 # Test cases
 def test_skill2_prompt_1(test, detect_with_llm):

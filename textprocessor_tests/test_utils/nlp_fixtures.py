@@ -1,6 +1,6 @@
 # import required modules
 import pytest
-from textprocessor.skills.nlp import get_nlp
+from textprocessor.utils import get_nlp
 
 @pytest.fixture(scope="module")
 def nlp():

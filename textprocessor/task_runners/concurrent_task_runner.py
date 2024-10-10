@@ -1,13 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+from ._abstract_task_runner import _AbstractTaskRunner
 
-class ConcurrentTaskRunner:
-    def __init__(self):
-        self.tasks = []
-
-    def add_task(self, func, *args, **kwargs):
-        self.tasks.append((func, args, kwargs))
-
+class ConcurrentTaskRunner(_AbstractTaskRunner):
     def run_all(self):
         results = []
         with ThreadPoolExecutor() as executor:
@@ -19,9 +14,3 @@ class ConcurrentTaskRunner:
                 except Exception as e:
                     logging.error(f"Task generated an exception: {e}")
         return results
-
-def update_dictionary(dict: dict, key, value):
-    if value:
-        dict[key] = value
-
-    return dict
