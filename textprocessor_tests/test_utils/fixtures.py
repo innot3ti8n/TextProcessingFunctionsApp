@@ -5,7 +5,6 @@ import pytest
 import mysql.connector
 import os
 import logging
-import dotenv
 import pprint
 
 from textprocessor.data_models import ComponentData, PromptData, Flag
@@ -44,7 +43,6 @@ def detect_with_nlp(create_doc, verify_detection):
 
 @pytest.fixture(scope="module")
 def conn():
-    dotenv.load_dotenv()
 
     dbConfig = {
         'host': os.getenv('AZURE_DB_HOST'),

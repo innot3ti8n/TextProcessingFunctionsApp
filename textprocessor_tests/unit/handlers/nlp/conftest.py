@@ -1,6 +1,6 @@
 # import required modules
 import pytest
-from textprocessor.handlers.nlp import get_results
+from textprocessor.utils import get_results
 from collections import namedtuple
 
 # import fixtures
