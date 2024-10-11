@@ -15,7 +15,6 @@ def markup_text(text, text_elements, metadata):
         attributes.setdefault("class", "highlight" + (" flag" if has_flag else ""))
         attributes.setdefault("data-component-name", list(components.values())[element['comp_index'] - 1].name)
         attributes.setdefault("style", [])
-        attributes['style'].append(f"--component-background: var(--c{element['comp_index']}-background)")
 
         if (has_flag):
             colour, characters = flags[element['flag']]
