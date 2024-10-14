@@ -176,7 +176,7 @@ def annotate(req: func.HttpRequest) -> func.HttpResponse:
 
             components_list = update_dictionary(components_list, 'present', [component for component in all_components if component['name'] in present_component_names and component['markup_id'] == 1])
             components_list = update_dictionary(components_list, 'missing', [component for component in all_components if component['name'] not in present_component_names and component['markup_id'] == 1])
-        
+
     except mysql.connector.Error as err:
         return error_response(err, "There was an issue connecting to the database", status_code=500)
 

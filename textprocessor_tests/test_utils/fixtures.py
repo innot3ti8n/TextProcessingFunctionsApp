@@ -1,11 +1,8 @@
-import pytest
-
 # import required modules
 import pytest
 import mysql.connector
 import os
 import logging
-import dotenv
 import pprint
 
 from textprocessor.data_models import ComponentData, PromptData, Flag
@@ -22,8 +19,8 @@ class TestCase:
         self.result = result
         return self
     
-    def using(self, testcase_factory_fixture):
-        testcase_factory_fixture(self)
+    def using(self, testcase_factory_fixture, transformer=None, *transformerArgs):
+        testcase_factory_fixture(self, transformer, *transformerArgs)
 
         
 @pytest.fixture
@@ -42,9 +39,10 @@ def detect_with_nlp(create_doc, verify_detection):
         verify_detection(doc, *args)
     return _detect_with_nlp
 
+
+
 @pytest.fixture(scope="module")
 def conn():
-    dotenv.load_dotenv()
 
     dbConfig = {
         'host': os.getenv('AZURE_DB_HOST'),
@@ -119,13 +117,29 @@ def get_skill_data(conn):
         return metadata
     return _get_skill_data
 
+def fancy_print(text, text_color_code=37, bg_color_code=None):
+    # ANSI escape codes for text and background colors
+    # 30-37: Text colors (black, red, green, yellow, blue, magenta, cyan, white)
+    # 40-47: Background colors (black, red, green, yellow, blue, magenta, cyan, white)
+
+    bg_color_code = "" if not bg_color_code else f";{bg_color_code}"
+
+    # Construct the ANSI escape code
+    ansi_code = f"\n\033[1m\033[{text_color_code}{bg_color_code}m[ {text} ]\033[0m\n"
+    
+    # Print the colored text
+    print(ansi_code)
+
 @pytest.fixture
 def verify_result():
     def _verify_result(context, expect, get):
         if expect != get:
-            print("\n[GIVEN]")
+            fancy_print("GIVEN", 34)
             pprint.pprint(context)
-            print(f"\n[EXPECT]\n{expect}")
-            print(f"\n[GET]\n{get}\n")
+            fancy_print("EXPECT", 32)
+            pprint.pprint(expect)
+            fancy_print("GET", 31)
+            pprint.pprint(get)
+            print()
         assert expect == get
     return _verify_result

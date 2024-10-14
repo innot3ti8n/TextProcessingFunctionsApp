@@ -29,7 +29,7 @@ def process_text(text, prompt_config, previous_result=None, retries=3, delay=2):
     
     # Add the previous result if available, clearly indicating its purpose
     if previous_result:
-        messages.append({"role": "assistant", "content": f"Use this result when labelling using <mark>: {previous_result}"})
+        messages.append({"role": "assistant", "content": f"Use this result when labelling with <mark>: {previous_result}"})
 
     # Add the user's current input text
     messages.append({"role": "user", "content": text})

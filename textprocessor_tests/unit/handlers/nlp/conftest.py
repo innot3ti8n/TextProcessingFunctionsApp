@@ -12,7 +12,7 @@ Result = namedtuple("Result", ['comp_index', 'start', 'end', 'flag'])
 
 @pytest.fixture
 def verify_detection(verify_result):
-    def _verify_detection(context, doc, *args):
+    def _verify_detection(context, doc, transformer, *transformerArgs, expectedResults):
         # Print all tokens
         for token in doc:
             print(f'Token: {token.text}, POS: {token.pos_}, Lemma: {token.lemma_}, Ent: {token.ent_type_}')
@@ -26,17 +26,22 @@ def verify_detection(verify_result):
             "start": result.start,
             "end": result.end,
             "flag": result.flag
-        } for result in args if result]
+        } for result in expectedResults if result]
 
-        verify_result(context, expected_results, get_results(doc))
+        results = get_results(doc)
+
+        if transformer:
+            results = transformer(results, *transformerArgs)
+
+        verify_result(context, expected_results, results)
     return _verify_detection
 
 # Detect components with NLP test case factory
 @pytest.fixture
 def detect_with_nlp(create_doc, verify_detection):
-    def _detect_with_nlp(test):
+    def _detect_with_nlp(test, transformer=None, *transformerArgs):
         doc = create_doc(test.context['text'])
         doc = test.test_func(doc)
         
-        verify_detection(test.context, doc, *test.result)
+        verify_detection(test.context, doc, transformer, *transformerArgs, expectedResults=test.result)
     return _detect_with_nlp

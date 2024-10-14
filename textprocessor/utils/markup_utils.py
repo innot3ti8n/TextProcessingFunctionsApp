@@ -10,16 +10,19 @@ def markup_text(text, text_elements, metadata):
     for element in text_elements:
         has_flag = "flag" in element
 
+        name = list(components.values())[element['comp_index'] - 1].name
+
         # Define tag attributes
         attributes = {}
         attributes.setdefault("class", "highlight" + (" flag" if has_flag else ""))
-        attributes.setdefault("data-component-name", list(components.values())[element['comp_index'] - 1].name)
+        attributes.setdefault("data-component-name", name)
         attributes.setdefault("style", [])
+        attributes['style'].append(f"--component-background: var(--c{element['comp_index']}-background)")
 
         if (has_flag):
             colour, characters = flags[element['flag']]
 
-            attributes.setdefault("data-subcomponent-text", characters or '')
+            attributes.setdefault("data-subcomponent-text", characters or '\u2003')
             attributes['style'].append(f"--subcomponent-background: {colour}")
 
         attributes = dict(sorted(attributes.items()))

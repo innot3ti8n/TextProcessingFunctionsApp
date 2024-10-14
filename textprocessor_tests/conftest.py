@@ -1,0 +1,1 @@
+pytest_plugins = ("textprocessor_tests.plugins.output_logger")

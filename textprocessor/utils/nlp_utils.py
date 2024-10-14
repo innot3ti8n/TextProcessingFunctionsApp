@@ -29,8 +29,7 @@ def get_nlp(component_names=[]):
     nlp = spacy.load("en_core_web_sm")
 
     # Register custom attributes
-    if not Doc.has_extension("result"):
-        Doc.set_extension("results", default=[])
+    Doc.set_extension("results", default=[], force=True)
 
     if component_names:
         # Add all components to the pipeline for detection only

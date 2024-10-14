@@ -1,3 +1,6 @@
+# import helper
+from textprocessor_tests.test_utils.helpers import filterListBy
+
 # import conftest helpers
 
 # Result args: 
@@ -60,46 +63,54 @@ def test_detect_sentence_boundary_punctuation(test, detect_with_nlp):
 
 def test_detect_commas_in_lists(test, detect_with_nlp):
     test(
-        punct.detect_commas_in_lists
+        punct.detect_commas
     ).given(
         { 'text': "I like apples, oranges and bananas." }
     ).expects(
         Result(5, 13, 14, 10)  # Correct usage of comma in a list
     ).using(
-        detect_with_nlp
+        detect_with_nlp,
+        filterListBy,
+        lambda x: x['comp_index'] == 5
     )
 
 def test_detect_commas_in_dates(test, detect_with_nlp):
     test(
-        punct.detect_commas_in_dates
+        punct.detect_commas
     ).given(
         { 'text': "July was born on July 4 2000." }
     ).expects(
         None  # Missing comma in date
     ).using(
-        detect_with_nlp
+        detect_with_nlp,
+        filterListBy,
+        lambda x: x['comp_index'] == 6
     )
 
 def test_detect_commas_for_pauses(test, detect_with_nlp):
     test(
-        punct.detect_commas_for_pauses
+        punct.detect_commas
     ).given(
         { 'text': "After dinner we went for a walk." }
     ).expects(
         None  # Missing comma after "dinner"
     ).using(
-        detect_with_nlp
+        detect_with_nlp,
+        filterListBy,
+        lambda x: x['comp_index'] == 7
     )
 
 def test_detect_commas_in_quotes(test, detect_with_nlp):
     test(
-        punct.detect_commas_in_quotes
+        punct.detect_commas
     ).given(
         { 'text': '"Hello," he said.' }
     ).expects(
         Result(8, 6, 7, 10)  # Correct usage of comma inside quotes
     ).using(
-        detect_with_nlp
+        detect_with_nlp,
+        filterListBy,
+        lambda x: x['comp_index'] == 8
     )
 
 def test_detect_quotes_for_dialogue(test, detect_with_nlp):
@@ -116,11 +127,11 @@ def test_detect_quotes_for_dialogue(test, detect_with_nlp):
 
 def test_detect_commas_separating_clauses(test, detect_with_nlp):
     test(
-        punct.detect_commas_separating_clauses
+        punct.detect_commas
     ).given(
-        { 'text': "I went to the store, but it was closed." }
+        { 'text': "After finishing his work, John decided to take a stroll in the park." }
     ).expects(
-        Result(10, 19, 20, 10)  # Correct usage of comma separating clauses
+        Result(10, 24, 25, 10)  # Correct usage of comma separating clauses
     ).using(
         detect_with_nlp
     )
