@@ -8,7 +8,7 @@ from textprocessor_tests.test_utils.helpers import filterListBy
     #   <start>: Int, 
     #   <end>: Int, 
     #   <flag>: Int | None
-from .conftest import Result
+from textprocessor_tests.test_utils.helpers import Result
 
 # import module that contains function to be tested
 import textprocessor.handlers.nlp.punctuation as punct
@@ -18,7 +18,7 @@ def test_detect_proper_nouns(test, detect_with_nlp):
     test(
         punct.detect_proper_nouns
     ).given(
-        { 'text': "john works at Google in New York." }
+        { 'text': "One sunny moring my mum and I were cleaning out the shed, then my mum got a call from work and needed to go, she said to me “can you please stay and clean the shed?” “yes mum” I said “do you want a friend to come over?” she said “ok I’ll go call Hannah to see if she can come over” So my mum left and hannah came over, we were cleaning until hannah said “What’s in this little red box?” I said “Open it and find out.”" }
     ).expects(
         Result(1, 0, 10, 11),  # Person: "john" is not capitalised
         Result(1, 14, 20, 10), # Organisation: "Google" is capitalised
@@ -71,7 +71,7 @@ def test_detect_commas_in_lists(test, detect_with_nlp):
     ).using(
         detect_with_nlp,
         filterListBy,
-        lambda x: x['comp_index'] == 5
+        lambda x: x['comp_id'] == 5
     )
 
 def test_detect_commas_in_dates(test, detect_with_nlp):
@@ -84,7 +84,7 @@ def test_detect_commas_in_dates(test, detect_with_nlp):
     ).using(
         detect_with_nlp,
         filterListBy,
-        lambda x: x['comp_index'] == 6
+        lambda x: x['comp_id'] == 6
     )
 
 def test_detect_commas_for_pauses(test, detect_with_nlp):
@@ -97,7 +97,7 @@ def test_detect_commas_for_pauses(test, detect_with_nlp):
     ).using(
         detect_with_nlp,
         filterListBy,
-        lambda x: x['comp_index'] == 7
+        lambda x: x['comp_id'] == 7
     )
 
 def test_detect_commas_in_quotes(test, detect_with_nlp):
@@ -110,7 +110,7 @@ def test_detect_commas_in_quotes(test, detect_with_nlp):
     ).using(
         detect_with_nlp,
         filterListBy,
-        lambda x: x['comp_index'] == 8
+        lambda x: x['comp_id'] == 8
     )
 
 def test_detect_quotes_for_dialogue(test, detect_with_nlp):

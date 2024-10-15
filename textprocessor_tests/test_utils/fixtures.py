@@ -6,6 +6,7 @@ import logging
 import pprint
 
 from textprocessor.data_models import ComponentData, PromptData, Flag
+from .helpers import Result
 
 class TestCase:
     def __init__(self, func):
@@ -15,8 +16,8 @@ class TestCase:
         self.context = context
         return self
     
-    def expects(self, *result):
-        self.result = result
+    def expects(self, *expected_result):
+        self.expected_result = list(expected_result)
         return self
     
     def using(self, testcase_factory_fixture, transformer=None, *transformerArgs):
@@ -132,14 +133,27 @@ def fancy_print(text, text_color_code=37, bg_color_code=None):
 
 @pytest.fixture
 def verify_result():
-    def _verify_result(context, expect, get):
+    def _verify_result(context, expect, get, transformer, *transformerArgs):
+        
+        if all(isinstance(item, Result) for item in expect):
+            expect = [item._asdict() for item in expect]
+
+        if transformer:
+            get = transformer(get, *transformerArgs)
+
+        if expect == [None]:
+            expect = None
+
+        if not isinstance(get, list):
+            expect = expect[0]
+
         if expect != get:
             fancy_print("GIVEN", 34)
             pprint.pprint(context)
             fancy_print("EXPECT", 32)
-            pprint.pprint(expect)
+            pprint.pprint(expect, sort_dicts=False)
             fancy_print("GET", 31)
-            pprint.pprint(get)
+            pprint.pprint(get, sort_dicts=False)
             print()
         assert expect == get
     return _verify_result
