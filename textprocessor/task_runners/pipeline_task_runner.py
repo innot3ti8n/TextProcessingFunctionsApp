@@ -1,15 +1,21 @@
 import logging
+import traceback
 from ._abstract_task_runner import _AbstractTaskRunner
 
 class PipelineTaskRunner(_AbstractTaskRunner):
+    def input(self, data=None):
+        self._data = data
+
+        return self
+
     def run_all(self):
-        results = []
+        result = self._data
         for func, args, kwargs in self.tasks:
             try:
-                if results:
-                    kwargs['previous_result'] = results[-1]
-                result = func(*args, **kwargs)
-                results.append(result)
+                result = func(result, *args, **kwargs)
             except Exception as e:
-                logging.error(f"Task generated an exception: {e}")
-        return results
+                error_message = f"Task generated an exception: {e}"
+                traceback_str = traceback.format_exc()
+                detailed_error = f"{error_message}\n\n{traceback_str}"
+                logging.error(detailed_error)
+        return result

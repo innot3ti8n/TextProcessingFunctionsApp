@@ -1,3 +1,5 @@
+import logging
+
 from spacy.language import Language
 from textprocessor.utils import get_nlp, get_results, get_constants
 from .constants import punct
@@ -11,7 +13,7 @@ def detect_proper_nouns(doc):
             # Check if the proper noun is capitalized
             is_capitalized = ent.text.istitle()
             results.append({
-                "comp_index": 1,  # Index for proper nouns
+                "comp_id": 1,  # Component ID for proper nouns
                 "start": ent.start_char,
                 "end": ent.end_char,
                 "flag": 10 if is_capitalized else 11  # Flag 10 if capitalized, 11 if not
@@ -27,7 +29,7 @@ def detect_key_events(doc):
             # Check if the key event is capitalized
             is_capitalized = ent.text.istitle()
             results.append({
-                "comp_index": 2,  # Index for key events
+                "comp_id": 2,  # Component ID for key events
                 "start": ent.start_char,
                 "end": ent.end_char,
                 "flag": 10 if is_capitalized else 11  # Flag 10 if capitalized, 11 if not
@@ -41,7 +43,7 @@ def detect_possessive_apostrophes(doc):
     for token in doc:
         if token.dep_ == 'poss' and "’s" in token.head.text:
             results.append({
-                "comp_index": 3,
+                "comp_id": 3,
                 "start": token.head.idx,
                 "end": token.head.idx + len(token.head.text),
                 "flag": 10 if token.head.text.endswith("’s") or token.head.text.endswith("s’") else 11
@@ -77,7 +79,7 @@ def detect_sentence_boundary_punctuation(doc):
                 punctuation_end = sent.end_char
 
         results.append({
-            "comp_index": 4,
+            "comp_id": 4,
             "start": punctuation_start,
             "end": punctuation_end,
             "flag": flag
@@ -94,7 +96,7 @@ def detect_commas(doc):
     for token in doc:
         if token.text == ',' and token.idx not in assigned_comma_indices:
             # Initialize the comma_info with start and end positions of the comma
-            comma_info = {"comp_index": None, "start": token.idx, "end": token.idx + 1}
+            comma_info = {"comp_id": None, "start": token.idx, "end": token.idx + 1}
             potential_flags = []
 
             # Check if the comma is part of a list
@@ -108,20 +110,20 @@ def detect_commas(doc):
                     or next_token.dep_ in ['conj', 'npadvmod', 'dobj', 'pobj', 'nsubj', 'appos']
                     or next_token.pos_ == 'CCONJ'  # Check for "and", "or", etc.
                 ):
-                    potential_flags.append({"comp_index": 5, "flag": 10})  # Comma in a list
+                    potential_flags.append({"comp_id": 5, "flag": 10})  # Comma in a list
 
             # Check if the comma is part of a date
             for ent in doc.ents:
                 if ent.label_ == 'DATE' and token.idx in range(ent.start_char, ent.end_char):
-                    potential_flags.append({"comp_index": 6, "flag": 10})  # Comma in a date
+                    potential_flags.append({"comp_id": 6, "flag": 10})  # Comma in a date
 
             # Check if the comma is for a pause
             if token.i > 0 and token.nbor(-1).dep_ == 'advcl':
-                potential_flags.append({"comp_index": 7, "flag": 10})  # Comma for pause
+                potential_flags.append({"comp_id": 7, "flag": 10})  # Comma for pause
 
             # Check if the comma precedes a quote
             if token.i < len(doc) - 1 and token.nbor(1).text in ['"', "'"]:
-                potential_flags.append({"comp_index": 8, "flag": 10})  # Comma before quote
+                potential_flags.append({"comp_id": 8, "flag": 10})  # Comma before quote
 
             # Store the potential flags in the comma info
             comma_info["potential_flags"] = potential_flags
@@ -136,20 +138,20 @@ def detect_commas(doc):
                     comma_found = True
                     # Store potential flags for commas separating clauses
                     results.append({
-                        "comp_index": None,  # Will be assigned in the second pass
-                        "start": child.idx,  # Start index of the comma
-                        "end": child.idx + 1,  # End index is one character after the comma
-                        "potential_flags": [{"comp_index": 10, "flag": 10}]  # Clause-separating comma
+                        "comp_id": None,  # Will be assigned in the second pass
+                        "start": child.idx,  # Start Component ID of the comma
+                        "end": child.idx + 1,  # End Component ID is one character after the comma
+                        "potential_flags": [{"comp_id": 10, "flag": 10}]  # Clause-separating comma
                     })
                     assigned_comma_indices.add(child.idx)  # Mark this comma as assigned
 
             # If no comma is found but the clause should be separated, flag it as missing
             if not comma_found:
                 results.append({
-                    "comp_index": 2,  # Assign comp_index as 2 directly for missing clause commas
-                    "start": token.idx,  # Start index of the token where comma should be
-                    "end": token.idx + len(token.text),  # End index of the token
-                    "potential_flags": [{"comp_index": 2, "flag": 11}]  # Missing comma for clause separation
+                    "comp_id": 10,  # Assign comp_id as 10 directly for missing clause commas
+                    "start": token.idx,  # Start Component ID of the token where comma should be
+                    "end": token.idx + len(token.text),  # End Component ID of the token
+                    "potential_flags": [{"comp_id": 10, "flag": 11}]  # Missing comma for clause separation
                 })
 
     for comma_info in results:
@@ -157,12 +159,12 @@ def detect_commas(doc):
         if potential_flags:
             # Prioritize or select the final type (for now just take the first valid match)
             best_flag = potential_flags[0]
-            comma_info["comp_index"] = best_flag["comp_index"]
+            comma_info["comp_id"] = best_flag["comp_id"]
             comma_info["flag"] = best_flag["flag"]
         else:
-            # If no valid flags found, keep the comp_index from the original (e.g., clause-related)
-            if comma_info["comp_index"] is None:
-                comma_info["comp_index"] = 10  # Ensure clause-related issues get the correct comp_index
+            # If no valid flags found, keep the comp_id from the original (e.g., clause-related)
+            if comma_info["comp_id"] is None:
+                comma_info["comp_id"] = 10  # Ensure clause-related issues get the correct comp_id
             comma_info["flag"] = 11  # Incorrect usage
     return doc
 
@@ -177,7 +179,7 @@ def detect_quotes_for_dialogue(doc):
         if quote_open:
             # Inside dialogue, checking for quotes
             results.append({
-                "comp_index": 9,  # Index for quotes for dialogue
+                "comp_id": 9,  # Component ID for quotes for dialogue
                 "start": token.idx,
                 "end": token.idx + len(token.text),
                 "flag": 10 if quote_open else 11
@@ -191,7 +193,7 @@ def detect_subordinating_clauses(doc):
     for token in doc:
         if token.dep_ == 'mark' and token.head.dep_ == 'advcl':
             results.append({
-                "comp_index": 11,  # Index for subordinating clauses
+                "comp_id": 11,  # Component ID for subordinating clauses
                 "start": token.idx,
                 "end": token.idx + len(token.text),
                 "flag": None
@@ -208,7 +210,7 @@ def detect_complex_dialogue(doc):
             dialogue = not dialogue
         if dialogue and token.pos_ in ['VERB', 'PRON']:
             results.append({
-                "comp_index": 12,  # Index for complex dialogue
+                "comp_id": 12,  # Component ID for complex dialogue
                 "start": token.idx,
                 "end": token.idx + len(token.text),
                 "flag": None
@@ -222,14 +224,14 @@ def detect_simple_punctuation(doc):
     for sent in doc.sents:
         if sent[-1].text not in '.!?':
             results.append({
-                "comp_index": 13,  # Index for simple punctuation
+                "comp_id": 13,  # Component ID for simple punctuation
                 "start": sent.end_char - 1,
                 "end": sent.end_char,
                 "flag": 11  # Flag 11 if simple punctuation is missing
             })
         else:
             results.append({
-                "comp_index": 13,
+                "comp_id": 13,
                 "start": sent.end_char - 1,
                 "end": sent.end_char,
                 "flag": 10  # Flag 10 if simple punctuation is correct
@@ -243,7 +245,7 @@ def detect_complex_punctuation(doc):
     for token in doc:
         if token.text in [':', ';', '--']:
             results.append({
-                "comp_index": 14,  # Index for complex punctuation
+                "comp_id": 14,  # Component ID for complex punctuation
                 "start": token.idx,
                 "end": token.idx + len(token.text),
                 "flag": 10  # Flag 10 for correct complex punctuation usage
@@ -252,7 +254,11 @@ def detect_complex_punctuation(doc):
 
 
 # Function to process text and return the results
-def process_text(text, component_names=get_constants(punct)):
+def process_text(text, component_names=None):
+    if not component_names:
+        component_names=get_constants(punct)
+    
+    logging.debug(f"{component_names}")
 
     # Process text
     nlp = get_nlp(component_names)

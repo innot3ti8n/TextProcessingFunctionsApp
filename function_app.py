@@ -4,14 +4,18 @@ import mysql.connector
 import os
 import re
 import json
+import pprint
 
 from textprocessor.process_manager import ProcessManager, Process
 from textprocessor.data_models import Flag, ComponentData, PromptData
 
-from textprocessor.processing_pipeline import ProcessingPipeline
-from textprocessor.task_runners import ConcurrentTaskRunner
+from textprocessor.prompt_processor import PromptProcessor
+from textprocessor.task_runners import ConcurrentTaskRunner, PipelineTaskRunner
 from textprocessor.handlers.llm import openai_gpt
 from textprocessor.handlers.nlp import punctuation
+
+import textprocessor.postprocess_nlp_llm as pnl
+
 from textprocessor.utils import merge_markups, update_dictionary
 
 dbConfig = {
@@ -49,7 +53,7 @@ def annotate(req: func.HttpRequest) -> func.HttpResponse:
     except ValueError as err:
         return error_response(err, "Invalid JSON received.")
 
-# Check for required keys
+    # Check for required keys
     required_keys = ['skill_id', 'text']
     missing_keys = [key for key in required_keys if key not in req_body]
     
@@ -95,25 +99,19 @@ def annotate(req: func.HttpRequest) -> func.HttpResponse:
                 Process(5, openai_gpt)
             ).createContext(skill_id, text)
 
+        # Process text
         runner = ConcurrentTaskRunner()
-        r_markups = []
-        r_notes = []
-
-        pp = ProcessingPipeline(pm)
+        pp = PromptProcessor(pm)
 
         for processor in pm.processors:
 
-            processed_with_llm = processed_with_nlp = False
-
             # If processing with llm
             if pm.processor_type(processor) == 'llm':
-                processed_with_llm = True
 
                 # get the prompt for current skill id
                 query = "SELECT p.prompt_id, p.prompt, p.markup_id, pc.text_component_id, pc.order FROM prompt AS p LEFT JOIN prompt_comp AS pc ON p.prompt_id = pc.prompt_id WHERE p.skill_id = %s"
                 cursor.execute(query, (skill_id,))
                 prompts = cursor.fetchall()
-
 
                 # Initialize a dictionary to hold the structured data
                 prompts_dict = {}
@@ -134,42 +132,30 @@ def annotate(req: func.HttpRequest) -> func.HttpResponse:
                     PromptData(prompt_id, data['prompt_config'], data['markup_id'], data['handle_comps']) for prompt_id, data in prompts_dict.items()
                 ]
                 
-                metadata['prompts_data'] = prompts_data
-                runner.add_task(pp.process_with_llm, processor, prompts_data, metadata)
+                # metadata['prompts_data'] = prompts_data
+                runner.add_task(pp.process_with_llm, processor, prompts_data)
 
             # If processing with nlp
             if pm.processor_type(processor) == 'nlp':
-                processed_with_nlp = True
+                runner.add_task(pp.process_with_nlp, processor)
 
-                runner.add_task(pp.process_with_nlp, processor, metadata)
-            
-            nlp_annotated = llm_annotated = llm_notes = ""
+        pp_result = runner.run_all()
 
-            r_result = runner.run_all()
+        # Post process NLP/LLM
+        runner = PipelineTaskRunner().input(pp_result)
+        runner.add_task(pnl.preprocess_result)
+        runner.add_task(pnl.process_llm_annotated, text)
+        runner.add_task(pnl.combine_llm_nlp)
+        # runner.add_task(pnl.remove_overlaps)
+        runner.add_task(pnl.markup_annotated, text, metadata)
 
-            if r_result:
-                if processed_with_nlp and not processed_with_llm:
-                    nlp_annotated  = r_result[0]
+        pl_result = runner.run_all()
 
-                elif not processed_with_nlp and processed_with_llm:
-                    llm_result = r_result[0]
-                    if 'llm_annotated' in llm_result: llm_annotated = llm_result['llm_annotated']
-                    if 'llm_notes' in llm_result: llm_notes = llm_result['llm_notes']
-
-                elif processed_with_nlp and processed_with_llm:
-                    nlp_annotated, llm_result = r_result
-                    if 'llm_annotated' in llm_result: llm_annotated = llm_result['llm_annotated']
-                    if 'llm_notes' in llm_result: llm_notes = llm_result['llm_notes']
-
-                if nlp_annotated: r_markups.append(nlp_annotated)
-                if llm_annotated: r_markups.append(llm_annotated)
-                if llm_notes: r_notes.append(llm_notes)
-
-        if r_markups: 
-            annotations = update_dictionary(annotations, 'highlighted_text', merge_markups(text, r_markups)) 
+        if "annotated" in pl_result: 
+            annotations = update_dictionary(annotations, 'highlighted_text', pl_result['annotated']) 
         
-        if r_notes:
-            annotations = update_dictionary(annotations, 'notes', "\n\n".join(r_notes))
+        if "notes" in pl_result:
+            annotations = update_dictionary(annotations, 'notes', pl_result['notes'])
         
         if 'highlighted_text' in annotations:
             present_component_names = set(re.findall(r'data-component-name="([^"]+)"', annotations['highlighted_text']))

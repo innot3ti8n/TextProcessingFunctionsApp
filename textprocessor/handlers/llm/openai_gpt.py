@@ -49,7 +49,6 @@ def process_text(text, prompt_config, previous_result=None, retries=3, delay=2):
 
             content = response.choices[0].message.content
 
-            print(content)
             return content
 
         except json.JSONDecodeError as e:

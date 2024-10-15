@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+import traceback
 from ._abstract_task_runner import _AbstractTaskRunner
 
 class ConcurrentTaskRunner(_AbstractTaskRunner):
@@ -12,5 +13,8 @@ class ConcurrentTaskRunner(_AbstractTaskRunner):
                     result = future.result()
                     results.append(result)
                 except Exception as e:
-                    logging.error(f"Task generated an exception: {e}")
+                    error_message = f"Task generated an exception: {e}"
+                    traceback_str = traceback.format_exc()
+                    detailed_error = f"{error_message}\n\n{traceback_str}"
+                    logging.error(detailed_error)
         return results
