@@ -1,7 +1,5 @@
-import logging
-
 from spacy.language import Language
-from textprocessor.utils import get_nlp, get_results, get_constants
+from textprocessor.utils import get_results
 from .constants import punct
 
 # Custom component for detecting proper nouns and ensuring they are capitalized
@@ -253,19 +251,17 @@ def detect_complex_punctuation(doc):
     return doc
 
 
-# Function to process text and return the results
-def process_text(text, component_names=None):
-    if not component_names:
-        component_names=get_constants(punct)
-    
-    logging.debug(f"{component_names}")
+# # Function to process text and return the results
+# def process_text(text, component_names=None):
+#     if not component_names:
+#         component_names=get_constants(punct)
 
-    # Process text
-    nlp = get_nlp(component_names)
-    doc = nlp(text)
+#     # Process text
+#     nlp = get_nlp(component_names)
+#     doc = nlp(text)
 
-    # Access the results
-    results = get_results(doc)
+#     # Access the results
+#     results = get_results(doc)
 
-    return results   
+#     return results   
 

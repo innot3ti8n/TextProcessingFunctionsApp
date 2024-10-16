@@ -1,5 +1,23 @@
-from collections import namedtuple
+from dataclasses import dataclass
 
-Flag = namedtuple('Flag', ['colour', 'characters'])
-ComponentData = namedtuple('ComponentData', ['name', 'markup_id'])
-PromptData = namedtuple('PromptData', ['prompt_id', 'prompt_config', 'markup_id', 'handle_comps'])
+@dataclass
+class ComponentConfig:
+    handler_module_name: str
+    component_names: list[str] = None
+
+@dataclass
+class Flag:
+    colour: str
+    characters: str
+
+@dataclass
+class ComponentData:
+    name: str
+    markup_id: int
+
+@dataclass
+class PromptData:
+    prompt_id: int
+    prompt_config: dict
+    markup_id: int
+    handle_comps: dict

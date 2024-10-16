@@ -4,6 +4,7 @@ import mysql.connector
 import os
 import logging
 import pprint
+from dataclasses import asdict
 
 from textprocessor.data_models import ComponentData, PromptData, Flag
 from .helpers import Result
@@ -136,7 +137,7 @@ def verify_result():
     def _verify_result(context, expect, get, transformer, *transformerArgs):
         
         if all(isinstance(item, Result) for item in expect):
-            expect = [item._asdict() for item in expect]
+            expect = [asdict(item) for item in expect]
 
         if transformer:
             get = transformer(get, *transformerArgs)

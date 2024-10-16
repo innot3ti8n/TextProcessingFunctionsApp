@@ -4,13 +4,13 @@ from ._abstract_task_runner import _AbstractTaskRunner
 
 class PipelineTaskRunner(_AbstractTaskRunner):
     def input(self, data=None):
-        self._data = data
+        self.__data = data
 
         return self
 
     def run_all(self):
-        result = self._data
-        for func, args, kwargs in self.tasks:
+        result = self.__data
+        for func, args, kwargs in self._tasks:
             try:
                 result = func(result, *args, **kwargs)
             except Exception as e:

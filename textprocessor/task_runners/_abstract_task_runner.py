@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 
 class _AbstractTaskRunner(ABC):
     def __init__(self):
-        self.tasks = []
+        self._tasks = []
 
     def add_task(self, func, *args, **kwargs):
-        self.tasks.append((func, args, kwargs))
+        self._tasks.append((func, args, kwargs))
         return self
 
     @abstractmethod

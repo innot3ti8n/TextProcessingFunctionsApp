@@ -1,10 +1,17 @@
 # import required modules
 import pytest
-from textprocessor.utils import get_nlp
+import spacy
+from spacy.tokens import Doc
 
 @pytest.fixture(scope="module")
 def nlp():
-    return get_nlp()
+    # Load spaCy model
+    nlp = spacy.load("en_core_web_sm")
+
+    # Register custom attributes
+    Doc.set_extension("results", default=[], force=True)
+
+    return nlp
 
 @pytest.fixture
 def create_doc(nlp):

@@ -1,7 +1,12 @@
-from collections import namedtuple
+from dataclasses import dataclass
 
 # result item container
-Result = namedtuple("Result", ['comp_id', 'start', 'end', 'flag'])
+@dataclass
+class Result:
+    comp_id: int
+    start: int
+    end: int
+    flag: int = None
 
 def filterListBy(my_list, condition):
     return list(filter(condition, my_list))

@@ -1,5 +1,6 @@
 import re
 import logging
+from textprocessor.data_models import Flag
 
 def markup_text(text, text_elements, metadata):
 
@@ -27,7 +28,9 @@ def markup_text(text, text_elements, metadata):
         attributes['style'].append(f"--component-background: var(--c{comp_index + 1}-background)")
 
         if (has_flag):
-            colour, characters = flags[element['flag']]
+            flag: Flag = flags[element['flag']]
+            colour = flag.colour
+            characters = flag.characters
 
             attributes.setdefault("data-subcomponent-text", characters or '\u2003')
             attributes['style'].append(f"--subcomponent-background: {colour}")
@@ -52,7 +55,7 @@ def parse_llm_markup(text, llm_markup):
         if data:
             component_id, flag_id = data.group(1).split(',')
 
-            has_flag = flag_id != '*'
+            flag_id = None if flag_id.strip() == '*' else int(flag_id)
 
             # Search for the marked text in the plain text, starting from the last found position
             start = text.find(marked_text, current_pos)
@@ -64,13 +67,13 @@ def parse_llm_markup(text, llm_markup):
                     "comp_id": (int(component_id)),
                     "start": start,
                     "end": end,
-                    "flag": int(flag_id) if has_flag else None
+                    "flag": flag_id
                 })
 
                 # Update the current position to continue searching after this point
                 current_pos = end
 
-        return marks
+    return marks
 
 def transform_mark_data(llm_markup, metadata):
 

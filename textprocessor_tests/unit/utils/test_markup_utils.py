@@ -15,9 +15,10 @@ def test_parse_llm_markup(test, markup_tcf):
         parse_llm_markup
     ).given({
         'text': 'One sunny morning my mum and I were cleaning out our grandfather’s shed',
-        'llm_markup': '''One sunny morning my <mark data="32,*">mum</mark> and I were cleaning out our grandfather’s shed'''
+        'llm_markup': '''One sunny morning my <mark data="31,*">mum</mark> and I were <mark data="35,*">cleaning</mark> out our grandfather’s shed'''
     }).expects(
-        Result(32, 21, 24, None)
+        Result(31, 21, 24, None),
+        Result(35, 36, 44, None)
     ).using(
         markup_tcf
     )
