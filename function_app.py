@@ -144,7 +144,7 @@ def annotate(req: func.HttpRequest) -> func.HttpResponse:
         # Post process NLP/LLM
         runner = PipelineTaskRunner().input(pp_result)
         runner.add_task(pnl.preprocess_result)
-        runner.add_task(pnl.process_llm_annotated, text)
+        runner.add_task(pnl.process_llm_response, text)
         runner.add_task(pnl.make_nlp_notes, text, metadata)
         runner.add_task(pnl.combine_llm_nlp)
         runner.add_task(pnl.remove_low_order_overlaps, order)

@@ -9,12 +9,18 @@ def preprocess_result(data):
 
     return data
 
-def process_llm_annotated(data, text):
+def process_llm_response(data, text):
     if "llm_annotated" not in data: 
         return data
     
     llm_annotated = data['llm_annotated']
     data['llm_annotated'] = list(itertools.chain.from_iterable([parse_llm_markup(text, markup) for markup in llm_annotated]))
+
+    if "llm_notes" not in data:
+        return data
+    
+    llm_notes = data['llm_notes']
+    data['llm_notes'] = '\n\n'.join(llm_notes)
 
     return data
 
