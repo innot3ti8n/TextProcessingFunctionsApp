@@ -22,6 +22,7 @@ def markup_text(text, text_elements, metadata):
 
         # Define tag attributes
         attributes = {}
+        attributes.setdefault("data", f"{element['comp_id']},{element['flag'] or '*'}")
         attributes.setdefault("class", "highlight" + (" flag" if has_flag else ""))
         attributes.setdefault("data-component-name", name)
         attributes.setdefault("style", [])
